@@ -1,24 +1,33 @@
+import java.awt.*;
 import java.util.Random;
 
-import org.powerbot.script.Area;
-import org.powerbot.script.Condition;
-import org.powerbot.script.PollingScript;
-import org.powerbot.script.Script;
-import org.powerbot.script.Tile;
+import org.powerbot.script.*;
 import org.powerbot.script.rt6.*;
+import org.powerbot.script.rt6.ClientContext;
 
-@Script.Manifest(name = "Dye Script", description = "Gathers onions and turns them into Yellow Dye in Draynor.", properties = "v1.0")
+@Script.Manifest(name = "Dye Script", description = "Gathers onions and turns them into Yellow Dye in Draynor.")
 
-public class DyeMaker extends PollingScript<ClientContext> {
-    private static final int ONION = 3366;
+public class DyeMaker extends PollingScript<ClientContext> implements MessageListener, PaintListener {
+    private static final int ONION_GROUND = 3366;
+    private static final int ONION_INV = 1957;
+    private static final int YELLOW_DYE = 1765;
     private static final int DOOR = 1239;
     private static final int AGGIE = 922;
+    private long startTime = System.currentTimeMillis();
+    private long last = 0;
+    private int dyesMade = 0;
     private static final Random rand = new Random();
     private final Area BANK_AREA = new Area(
             new Tile(3092, 3240, 0),
             new Tile(3092, 3246, 0),
             new Tile(3096, 3246, 0),
             new Tile(3097, 3240, 0)
+    );
+    private final Area DRAYNOR_VILLAGE = new Area(
+            new Tile(3075, 3307, 0),
+            new Tile(3074, 3218, 0),
+            new Tile(3155, 3217, 0),
+            new Tile(3155, 3306, 0)
     );
     private final Area ONION_AREA = new Area(
             new Tile(3095, 3237, 0),
@@ -60,19 +69,27 @@ public class DyeMaker extends PollingScript<ClientContext> {
 
         switch (state) {
             case GATHERING_ONIONS: {
-                final GameObject onion = ctx.objects.select().id(ONION).nearest().poll();
+                final GameObject onion = ctx.objects.select().id(ONION_GROUND).nearest().poll();
+
+                if (ctx.players.local().animation() != -1) {
+                    last = System.currentTimeMillis();
+                }
+                if (System.currentTimeMillis() - last < (rand.nextInt(3)*1000)) {
+                    break;
+                }
                 if (ctx.backpack.count() <= 28){
-                    if (ctx.players.local().animation() == -1){
-                        if (onion.inViewport()){
+
+                    if (onion.inViewport()){
+                        if (rand.nextInt(10) < 4){
                             ctx.camera.turnTo(onion);
-                            onion.interact("Pick");
-                            Condition.sleep(1500);
                         }
-                        else{
-                            ctx.movement.step(onion);
-                            ctx.camera.turnTo(onion);
-                            Condition.sleep(1500);
-                        }
+                        onion.interact("Pick");
+                        Condition.sleep(1500);
+                    }
+                    else {
+                        ctx.movement.step(onion);
+                        ctx.camera.turnTo(onion);
+                        Condition.sleep(1500);
                     }
                 }
                 break;
@@ -81,14 +98,14 @@ public class DyeMaker extends PollingScript<ClientContext> {
 
 
             case WALK_BANK: {
-                if (ctx.objects.select(5).id(DOOR).nearest().poll().inViewport()){
+                if (ctx.objects.select(3).id(DOOR).nearest().poll().inViewport()){
                     System.out.println("There's a door.");
                     ctx.camera.turnTo(ctx.objects.select().id(DOOR).nearest().poll());
-                    ctx.objects.select(5).id(DOOR).nearest().poll().interact("Open");
+                    ctx.objects.select(3).id(DOOR).nearest().poll().interact("Open");
                     Condition.sleep(1500);
                     ctx.movement.step(BANK_AREA.getRandomTile());
                 }
-                else{
+                else {
                     bankpath.traverse();
                 }
                 Condition.sleep(1500);
@@ -97,10 +114,10 @@ public class DyeMaker extends PollingScript<ClientContext> {
             }
 
             case WALK_AGGIE: {
-                if (ctx.objects.select(5).id(DOOR).nearest().poll().inViewport()){
+                if (ctx.objects.select(3).id(DOOR).nearest().poll().inViewport()){
                     ctx.camera.turnTo(ctx.objects.select().id(DOOR).nearest().poll());
                     System.out.println("There's a door.");
-                    ctx.objects.select(5).id(DOOR).nearest().poll().interact("Open");
+                    ctx.objects.select(3).id(DOOR).nearest().poll().interact("Open");
                     Condition.sleep(1500);
                     ctx.movement.step(AGGIE_HOUSE.getRandomTile());
                 }
@@ -115,33 +132,27 @@ public class DyeMaker extends PollingScript<ClientContext> {
                 ctx.movement.step(ONION_AREA.getRandomTile());
                 Condition.sleep(1500);
                 break;
-
-                /*
-                if(!ctx.objects.select(15).id(GATE).isEmpty()){
-                    ctx.objects.nearest().poll().interact("Open");
-                }
-                */
             }
 
             case BANK: {
-                if(!ctx.bank.opened()){
+                if (!ctx.bank.opened()){
                     ctx.bank.open();
                     Condition.sleep(1000);
                 }
 
-                else{
-                    if(rand.nextInt(100) < 95){
+                else {
+                    if (rand.nextInt(100) < 95){
                         ctx.bank.depositInventory();
                         Condition.sleep(1000);
-                        if(rand.nextInt(100) > 95){
+                        if (rand.nextInt(100) > 95){
                             ctx.bank.close();
                             Condition.sleep(1000);
                         }
                     }
-                    else{
+                    else {
                         ctx.bank.deposit(10000, 28);
                         Condition.sleep(1000);
-                        if(rand.nextInt(100) > 85){
+                        if (rand.nextInt(100) > 85){
                             ctx.bank.close();
                             Condition.sleep(1000);
                         }
@@ -157,18 +168,29 @@ public class DyeMaker extends PollingScript<ClientContext> {
                 ctx.controller.stop();
             }
 
+            case LOST: {
+                ctx.camera.turnTo(DRAYNOR_VILLAGE.getCentralTile());
+                ctx.movement.step(ONION_AREA.getRandomTile());
+            }
+
             case MAKING_DYE: {
+                if (ctx.players.local().animation() != -1) {
+                    last = System.currentTimeMillis();
+                }
+                if (System.currentTimeMillis() - last < (rand.nextInt(3)*1000)) {
+                    break;
+                }
                 ctx.camera.turnTo(ctx.objects.select().id(AGGIE).nearest().poll());
                 ctx.npcs.select().id(AGGIE).nearest().poll().interact("Make-dyes");
                 Condition.sleep(1500);
-                ctx.input.send("3");
+                ctx.chat.select().text("Yellow dye (requires 5 coins and 2 onions).").peek().select(true);
                 Condition.sleep(1500);
                 ctx.chat.clickContinue();
-                if(rand.nextInt(10) < 3){
+                if (rand.nextInt(10) < 4){
+                    Condition.sleep(1500);
                     ctx.chat.clickContinue();
                 }
                 break;
-
             }
         }
     }
@@ -180,29 +202,34 @@ public class DyeMaker extends PollingScript<ClientContext> {
 
         System.out.println("Getting State");
 
-        if(ctx.backpack.select().id(1957).count() == 28 && !AGGIE_HOUSE.contains(ctx.players.local())){
+        if (ctx.backpack.moneyPouchCount() < 5){
+            return State.STOP;
+        }
+        if (!DRAYNOR_VILLAGE.contains(ctx.players.local())){
+            System.out.println("Are you lost?");
+            System.out.println("Getting you back to onions.");
+            return State.LOST;
+        }
+        if (ctx.backpack.select().count() == 28 && !AGGIE_HOUSE.contains(ctx.players.local())){
             System.out.println("Walking to Aggie");
             return State.WALK_AGGIE;
         }
-        if (!ONION_AREA.contains(ctx.players.local()) && ctx.backpack.select().id(1765).count() == 0
-                && ctx.backpack.select().id(1957).count() == 0){
+        if (!ONION_AREA.contains(ctx.players.local()) && ctx.backpack.select().id(YELLOW_DYE).count() == 0
+                && ctx.backpack.select().id(ONION_INV).count() == 0){
             System.out.println("Walking to Onions");
             return State.WALK_ONIONS;
         }
-        if(AGGIE_HOUSE.contains(ctx.players.local()) && ctx.backpack.select().id(1957).count() > 1 && ctx.backpack.moneyPouchCount() >= 5){
+        if (AGGIE_HOUSE.contains(ctx.players.local()) && ctx.backpack.select().id(ONION_INV).count() > 1 && ctx.backpack.moneyPouchCount() >= 5){
             System.out.println("Making Dye");
             return State.MAKING_DYE;
         }
-        if(BANK_AREA.contains(ctx.players.local()) && ctx.backpack.select().id(1765).count() == 14){
+        if (BANK_AREA.contains(ctx.players.local())){
             System.out.println("Banking");
             return State.BANK;
         }
-        if(ctx.backpack.select().id(1765).count() == 14){
+        if (ctx.backpack.select().id(YELLOW_DYE).count() >= 13){
             System.out.println("Walking to the Bank");
             return State.WALK_BANK;
-        }
-        if(ctx.backpack.moneyPouchCount() < 5){
-            return State.STOP;
         }
         else {
             System.out.println("Gathering Onions");
@@ -214,8 +241,33 @@ public class DyeMaker extends PollingScript<ClientContext> {
 
     private enum State {
 
-        BANK, WALK_BANK, MAKING_DYE, GATHERING_ONIONS, WALK_ONIONS, WALK_AGGIE, STOP
+        BANK, WALK_BANK, MAKING_DYE, GATHERING_ONIONS, WALK_ONIONS, WALK_AGGIE, LOST,STOP
 
+    }
+
+    @Override
+    public void messaged(MessageEvent e) {
+        final String msg = e.text().toLowerCase();
+        if (e.source().isEmpty() && msg.contains("5 coins have been removed from your money pouch")) {
+            dyesMade++;
+        }
+    }
+
+    @Override
+    public void repaint(Graphics g) {
+        long minutes = (System.currentTimeMillis() - startTime)/1000/60;
+        long seconds = (System.currentTimeMillis() - startTime)/1000%60;
+
+        g.setColor(Color.darkGray);
+        g.fillRect(0,314,280,75);
+        g.setColor(Color.black);
+        g.drawRect(0,314,280,75);
+        g.drawString("Dyes made: " + dyesMade, 5, 330);
+        g.drawString("Currently running for " + minutes + " minutes " + seconds + " seconds.", 5, 350);
+        g.drawString("Profit: " + (dyesMade*440) + " gp", 5, 370);
+        Font title = new Font("Times New Roman", Font.PLAIN, 16);
+        g.setFont(title);
+        g.drawString("Autonomous Dye Maker", 5, 310);
     }
 
 }
