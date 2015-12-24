@@ -1,3 +1,16 @@
+//**********************************************************
+// Script: Yellow Dye Maker
+// User: Autonomous
+//
+// Author: AutonomousCoding
+//
+// Date: December 24, 2015
+//
+//Description: Gathers onions and turns them into Yellow
+//  Dye in Draynor.
+//
+//*********************************************************
+
 import java.awt.*;
 import java.util.Random;
 
@@ -5,7 +18,7 @@ import org.powerbot.script.*;
 import org.powerbot.script.rt6.*;
 import org.powerbot.script.rt6.ClientContext;
 
-@Script.Manifest(name = "Dye Script", description = "Gathers onions and turns them into Yellow Dye in Draynor.")
+@Script.Manifest(name = "Yellow Dye Maker", description = "Gathers onions and turns them into Yellow Dye in Draynor.")
 
 public class DyeMaker extends PollingScript<ClientContext> implements MessageListener, PaintListener {
     private static final int ONION_GROUND = 3366;
