@@ -280,7 +280,7 @@ public class DyeMaker extends PollingScript<ClientContext> implements MessageLis
         g.drawString("Profit: " + (dyesMade*440) + " gp", 5, 370);
         Font title = new Font("Times New Roman", Font.PLAIN, 16);
         g.setFont(title);
-        g.drawString("Autonomous Dye Maker", 5, 310);
+        g.drawString("Autonomous Yellow Dye Maker", 5, 310);
     }
 
 }
