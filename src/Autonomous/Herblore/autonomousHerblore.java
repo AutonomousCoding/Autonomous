@@ -1,4 +1,4 @@
-package Autonomous;
+package Autonomous.Herblore;
 //**********************************************************
 // Script: Autonomous Herblore
 //
