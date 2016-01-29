@@ -1,5 +1,7 @@
+package AutonomousCoding;
 //**********************************************************
 // Script: Yellow Dye Maker
+//
 // User: Autonomous
 //
 // Author: AutonomousCoding
@@ -111,7 +113,7 @@ public class DyeMaker extends PollingScript<ClientContext> implements MessageLis
 
 
             case WALK_BANK: {
-                if (ctx.objects.select(3).id(DOOR).nearest().poll().inViewport()){
+                if (ctx.objects.select(5).id(DOOR).nearest().poll().inViewport()){
                     System.out.println("There's a door.");
                     ctx.camera.turnTo(ctx.objects.select().id(DOOR).nearest().poll());
                     ctx.objects.select(3).id(DOOR).nearest().poll().interact("Open");
@@ -127,7 +129,7 @@ public class DyeMaker extends PollingScript<ClientContext> implements MessageLis
             }
 
             case WALK_AGGIE: {
-                if (ctx.objects.select(3).id(DOOR).nearest().poll().inViewport()){
+                if (ctx.objects.select(5).id(DOOR).nearest().poll().inViewport()){
                     ctx.camera.turnTo(ctx.objects.select().id(DOOR).nearest().poll());
                     System.out.println("There's a door.");
                     ctx.objects.select(3).id(DOOR).nearest().poll().interact("Open");
@@ -277,7 +279,7 @@ public class DyeMaker extends PollingScript<ClientContext> implements MessageLis
         g.drawRect(0,314,280,75);
         g.drawString("Dyes made: " + dyesMade, 5, 330);
         g.drawString("Currently running for " + minutes + " minutes " + seconds + " seconds.", 5, 350);
-        g.drawString("Profit: " + (dyesMade*440) + " gp", 5, 370);
+        g.drawString("Profit: " + (dyesMade*440/1000) + "k gp", 5, 370);
         Font title = new Font("Times New Roman", Font.PLAIN, 16);
         g.setFont(title);
         g.drawString("Autonomous Yellow Dye Maker", 5, 310);
