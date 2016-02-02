@@ -27,7 +27,7 @@ import org.powerbot.script.rt6.ClientContext;
 
 
 @Script.Manifest(name = "Autonomous Herblore", description = "Makes potions or cleans herbs.", properties =
-        "author=Autonomous; topic=1299918;")
+        "author=Autonomous; topic=1299918; client=6;")
 
 public class autonomousHerblore extends PollingScript<ClientContext> implements MessageListener, PaintListener {
 
@@ -83,7 +83,8 @@ public class autonomousHerblore extends PollingScript<ClientContext> implements 
                 secondHalfID = ctx.backpack.itemAt(27).id();
 
                 if (ctx.objects.select(10).id(89770).poll().inViewport()){
-                    ctx.objects.id(89770).peek().interact("Mix Potions");
+                    System.out.println("Well in sight");
+                    ctx.objects.select().id(89770).peek().interact("Mix Potions");
                 }
                 else {
                     firstHalf = rand.nextInt(0, 13);
